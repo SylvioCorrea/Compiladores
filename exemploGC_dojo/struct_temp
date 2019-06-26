@@ -1,0 +1,47 @@
+// ==============================================================================================
+decl : type ID ';' {  TS_entry nodo = ts.pesquisa($2);
+    	                if (nodo != null) 
+                            yyerror("(sem) variavel >" + $2 + "< jah declarada");
+                        else ts.insert(new TS_entry($2, $1)); }
+      | STRUCT IDENT '{' {
+                        nodoAux = ts.pesquisa($2);
+                        if (nodo != null) {
+                        	yyerror("(sem) nome >" + $2 + "< jah declarada");
+                        } else {
+		                     	nodoAux = new TS_entry($2, TP_STRUCT, ClasseID.NomeStruct);
+		                     	ts.insert(nodoAux);
+		                     	aux = ts;
+		                     	ts = new TabSimb();
+                       	}
+                       	}
+                       	
+                       	lcampos
+                       	
+                       	{
+                       	nodoAux.setLocais(ts);
+                       	ts = aux;
+                       	}
+                       	'}' ';'
+      ;
+
+type : INT    { $$ = INT; }
+     | FLOAT  { $$ = FLOAT; }
+     | BOOL   { $$ = BOOL; }
+     ;
+
+id : IDENT { TS_entry nodo = ts.pesquisa($1);
+	if (nodo != null)
+		yyerror("(sem) variavel >" + $s1 + "c");
+	else ts.insert(new TS_entry($1, currentType, currClass));
+	}
+	;
+	
+lid : lid ',' id
+		| id
+		;
+		
+lcampos : lcampos ';' type lid
+				| type lid
+				;
+
+// ===============================================================================================

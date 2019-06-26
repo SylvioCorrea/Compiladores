@@ -1,0 +1,10 @@
+dstruct myst {
+    int a, b;
+    bool val;
+};
+
+struct myst s1;
+
+void main() {
+    
+}

@@ -1,0 +1,14 @@
+int a; 
+
+void main() {  
+
+    a=0;
+    while (a<10) {
+		    a++;
+		    if(a==3){
+		    	continue;
+		    }
+		    write (" a =  ", a );
+    }
+}
+

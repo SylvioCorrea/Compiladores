@@ -1,0 +1,28 @@
+int a; 
+int b; 
+int c;
+
+void main() {  
+    for (a=1; a< 5; a++) {
+            write (" a =  ", a );
+    }
+
+    b=10;
+    for (; b< 15; b++) {
+            write (" b =  ", b );
+    }
+
+    c=20;
+    for (; c< 25; ) {
+            write (" c =  ", c );
+            c++;
+    }
+    
+
+    a=1;
+    for (; ; ) {
+            write (" a =  ", a );
+            a++;
+    }
+}
+

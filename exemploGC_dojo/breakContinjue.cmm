@@ -1,0 +1,22 @@
+int a; 
+int b; 
+int c;
+
+void main() {  
+
+    b=1;
+    while (b< 15) {
+            if (b == 3) continue;
+            b++;
+            write (" b =  ", b );
+            if (b>7) break;
+    }
+    
+    for (a=1; a< 15; a++) {
+            if (a == 3) continue;
+            write (" a =  ", a );
+            if (a>7) break;
+    }
+
+}
+
