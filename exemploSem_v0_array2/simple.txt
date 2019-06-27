@@ -1,0 +1,20 @@
+int i;
+int j,k;
+
+dstruct str1 {
+    int a;
+    int b,c;
+    int i,j,k;
+};
+
+function int func (int a) {
+}
+
+void main() {
+    i = 2;
+    j = i;
+}
+
+
+
+

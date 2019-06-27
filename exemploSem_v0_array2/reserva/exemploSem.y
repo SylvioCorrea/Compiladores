@@ -6,7 +6,7 @@
 
 %token IDENT, INT, DOUBLE, BOOL, NUM, STRING
 %token LITERAL, AND, VOID, MAIN, IF
-%token DSTRUCT, STRUCT, FUNCTION, RETURN
+%token DSTRUCT, STRUCT
 
 %right '='
 %nonassoc '>'
@@ -30,39 +30,22 @@ decl : defFunc
      | declVar
      ;
 
-defFunc : FUNCTION funcType IDENT
+defFunc : type IDENT '('
      	    {	
-     			TS_entry temp = ts.pesquisa($3);
+     			TS_entry temp = ts.pesquisa($2);
      			if(temp!=null) {
-     				yyerror("(sem) nome >" + $3 + "< jah declarado");
+     				yyerror("(sem) nome >" + $2 + "< jah declarado");
      			} else {
      				TabSimb escopoFuncao = new TabSimb();
-     				temp = new TS_entry($3, (TS_entry)$2, ClasseID.NomeFuncao);
+     				temp = new TS_entry($2, (TS_entry)$1, ClasseID.NomeFuncao);
      				temp.setLocais(escopoFuncao);
      				ts.insert(temp);
      				auxTs = ts;
      				ts = escopoFuncao; //tabela de simbolos da funcao
      			}
      	    }
-          '(' funcParams ')' '{' funcDecList funcCmdList '}' {ts = auxTs;} //tabela de simbolos global novamente
+         maybeParams ')' '{' corpoFunc '}' {ts = auxTs;} //tabela de simbolos global novamente
        ; 
-       
-funcType : VOID {$$ = Tp_VOID;}
-         | type
-         ;
-
-//TODO declaracoes dentro da funcao
-funcDecList : 
-            ;
-
-funcCmdList : funcCmdList funcCmd
-            | 
-            ;
-
-//TODO teste de tipo de retorno
-funcCmd : cmd
-        | RETURN exp
-        ;
 
 defStruct : DSTRUCT IDENT '{'
                 {
@@ -77,7 +60,7 @@ defStruct : DSTRUCT IDENT '{'
                         currClass = ClasseID.CampoStruct;
                     }
                 }       	
-             lcampos
+             lcampos ';'      	
                 {
                     nodoAux.setLocais(ts);
                     ts = auxTs;
@@ -101,7 +84,10 @@ declVar : type {currentType = (TS_entry)$1;}
           Lid ';'
         ;
 
-lcampos : lcampos declVar
+corpoFunc :
+          ;
+
+lcampos : lcampos ';' declVar
         | declVar
 		;
 
@@ -226,8 +212,6 @@ exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
   public static TS_entry Tp_INT =  new TS_entry("int", null, ClasseID.TipoBase);
   public static TS_entry Tp_DOUBLE = new TS_entry("double", null,  ClasseID.TipoBase);
   public static TS_entry Tp_BOOL = new TS_entry("bool", null,  ClasseID.TipoBase);
-  
-  public static TS_entry Tp_VOID = new TS_entry("void", null, ClasseID.TipoBase);
 
   public static TS_entry Tp_ARRAY = new TS_entry("array", null,  ClasseID.TipoBase);
 

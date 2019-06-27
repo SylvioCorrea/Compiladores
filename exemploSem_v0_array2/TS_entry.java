@@ -31,6 +31,10 @@ public class TS_entry
     public String getId() {
        return id; 
     }
+    
+    public ClasseID getClasse() {
+        return classe;
+    }
 
     public TS_entry getTipo() {
        return tipo; 
@@ -48,7 +52,6 @@ public class TS_entry
        return local; 
     }
 
-
     public String toString() {
         StringBuilder aux = new StringBuilder("");
 
@@ -62,7 +65,7 @@ public class TS_entry
 
         if(local!=null) {
             for(TS_entry tse : local.getLista()) {
-                aux.append("\nLocal de "+id+": ");
+                aux.append("\nLocal de "+id+":\t");
                 aux.append(tse.toString());
             }
         }

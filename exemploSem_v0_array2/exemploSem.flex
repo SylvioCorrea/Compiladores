@@ -56,6 +56,8 @@ main { return Parser.MAIN; }
 if { return Parser.IF; }
 dstruct { return Parser.DSTRUCT; }
 struct { return Parser.STRUCT; }
+function { return Parser.FUNCTION; }
+return { return Parser.return; }
 
 
 [a-zA-Z][a-zA-Z_0-9]* { yyparser.yylval = new ParserVal(yytext());
