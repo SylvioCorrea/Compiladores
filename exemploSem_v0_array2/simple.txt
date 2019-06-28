@@ -7,12 +7,31 @@ dstruct str1 {
     int i,j,k;
 };
 
-function int func (int a) {
+struct str1 s;
+
+bool v;
+
+function int fun1 () {
+    int f,g;
+    struct str1 s;
+    
 }
+
+function int fun2 (int param1, int param2) {
+
+}
+
+function void fun3 (int param1) {
+    
+}
+
+
 
 void main() {
     i = 2;
     j = i;
+    s.a = 2;
+    k = fun1(1);
 }
 
 

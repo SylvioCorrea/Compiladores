@@ -13,68 +13,88 @@
 
    8  $$2 :
 
-   9  defFunc : FUNCTION type IDENT $$2 '(' maybeParams ')' '{' corpoFunc '}'
+   9  $$3 :
 
-  10  $$3 :
+  10  defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams ')' '{' $$3 funcDecList funcCmdList '}'
 
-  11  $$4 :
+  11  funcType : VOID
+  12           | type
 
-  12  defStruct : DSTRUCT IDENT '{' $$3 lcampos $$4 '}' ';'
+  13  maybeParams : lParams
+  14              |
 
-  13  $$5 :
+  15  lParams : lParams ',' param
+  16          | param
 
-  14  declVar : type $$5 TArray Lid ';'
+  17  param : type IDENT
+  18        | STRUCT IDENT IDENT
 
-  15  $$6 :
+  19  funcDecList : declVar funcDecList
+  20              |
 
-  16  declVar : STRUCT IDENT $$6 Lid ';'
+  21  funcCmdList : funcCmdList funcCmd
+  22              |
 
-  17  corpoFunc :
+  23  funcCmd : cmd
+  24          | RETURN exp
 
-  18  lcampos : lcampos declVar
-  19          | declVar
+  25  $$4 :
 
-  20  maybeParams : lParams
-  21              |
+  26  $$5 :
 
-  22  lParams : lParams ',' param
-  23          | param
+  27  defStruct : DSTRUCT IDENT '{' $$4 lcampos $$5 '}' ';'
 
-  24  param : type IDENT
-  25        | STRUCT IDENT IDENT
+  28  $$6 :
 
-  26  Lid : Lid ',' id
-  27      | id
+  29  declVar : type $$6 TArray Lid ';'
 
-  28  id : IDENT
+  30  $$7 :
 
-  29  $$7 :
+  31  declVar : STRUCT IDENT $$7 Lid ';'
 
-  30  TArray : '[' NUM ']' $$7 TArray
-  31         |
+  32  lcampos : lcampos declVar
+  33          | declVar
 
-  32  type : INT
-  33       | DOUBLE
-  34       | BOOL
+  34  Lid : Lid ',' id
+  35      | id
 
-  35  main : VOID MAIN '(' ')' bloco
+  36  id : IDENT
 
-  36  bloco : '{' listacmd '}'
+  37  $$8 :
 
-  37  listacmd : listacmd cmd
-  38           |
+  38  TArray : '[' NUM ']' $$8 TArray
+  39         |
 
-  39  cmd : exp ';'
-  40      | IF '(' exp ')' '{' cmd '}'
+  40  type : INT
+  41       | DOUBLE
+  42       | BOOL
 
-  41  exp : exp '+' exp
-  42      | exp '>' exp
-  43      | exp AND exp
-  44      | NUM
-  45      | '(' exp ')'
-  46      | IDENT
-  47      | exp '=' exp
-  48      | exp '[' exp ']'
+  43  main : VOID MAIN '(' ')' bloco
+
+  44  bloco : '{' listacmd '}'
+
+  45  listacmd : listacmd cmd
+  46           |
+
+  47  cmd : exp ';'
+  48      | IF '(' exp ')' '{' cmd '}'
+
+  49  exp : exp '+' exp
+  50      | exp '>' exp
+  51      | exp AND exp
+  52      | NUM
+  53      | '(' exp ')'
+  54      | IDENT
+  55      | IDENT '.' IDENT
+  56      | IDENT '(' maybeExp ')'
+  57      | exp '=' exp
+  58      | exp '[' exp ']'
+
+  59  maybeExp : lExp
+  60           |
+
+  61  lExp : lExp ',' exp
+  62       | exp
 
 state 0
 	$accept : . prog $end  (0)
@@ -113,64 +133,66 @@ state 2
 
 
 state 3
-	type : INT .  (32)
+	type : INT .  (40)
 
-	.  reduce 32
+	.  reduce 40
 
 
 state 4
-	type : DOUBLE .  (33)
+	type : DOUBLE .  (41)
 
-	.  reduce 33
+	.  reduce 41
 
 
 state 5
-	type : BOOL .  (34)
+	type : BOOL .  (42)
 
-	.  reduce 34
+	.  reduce 42
 
 
 state 6
-	defStruct : DSTRUCT . IDENT '{' $$3 lcampos $$4 '}' ';'  (12)
+	defStruct : DSTRUCT . IDENT '{' $$4 lcampos $$5 '}' ';'  (27)
 
 	IDENT  shift 15
 	.  error
 
 
 state 7
-	declVar : STRUCT . IDENT $$6 Lid ';'  (16)
+	declVar : STRUCT . IDENT $$7 Lid ';'  (31)
 
 	IDENT  shift 16
 	.  error
 
 
 state 8
-	defFunc : FUNCTION . type IDENT $$2 '(' maybeParams ')' '{' corpoFunc '}'  (9)
+	defFunc : FUNCTION . funcType IDENT $$2 '(' maybeParams ')' '{' $$3 funcDecList funcCmdList '}'  (10)
 
 	INT  shift 3
 	DOUBLE  shift 4
 	BOOL  shift 5
+	VOID  shift 17
 	.  error
 
-	type  goto 17
+	type  goto 18
+	funcType  goto 19
 
 
 state 9
-	declVar : type . $$5 TArray Lid ';'  (14)
-	$$5 : .  (13)
+	declVar : type . $$6 TArray Lid ';'  (29)
+	$$6 : .  (28)
 
-	.  reduce 13
+	.  reduce 28
 
-	$$5  goto 18
+	$$6  goto 20
 
 
 state 10
 	prog : $$1 dList . main  (2)
 
-	VOID  shift 19
+	VOID  shift 21
 	.  error
 
-	main  goto 20
+	main  goto 22
 
 
 state 11
@@ -186,7 +208,7 @@ state 11
 	VOID  reduce 4
 
 	type  goto 9
-	dList  goto 21
+	dList  goto 23
 	decl  goto 11
 	defFunc  goto 12
 	defStruct  goto 13
@@ -212,728 +234,991 @@ state 14
 
 
 state 15
-	defStruct : DSTRUCT IDENT . '{' $$3 lcampos $$4 '}' ';'  (12)
+	defStruct : DSTRUCT IDENT . '{' $$4 lcampos $$5 '}' ';'  (27)
 
-	'{'  shift 22
+	'{'  shift 24
 	.  error
 
 
 state 16
-	declVar : STRUCT IDENT . $$6 Lid ';'  (16)
-	$$6 : .  (15)
+	declVar : STRUCT IDENT . $$7 Lid ';'  (31)
+	$$7 : .  (30)
 
-	.  reduce 15
+	.  reduce 30
 
-	$$6  goto 23
+	$$7  goto 25
 
 
 state 17
-	defFunc : FUNCTION type . IDENT $$2 '(' maybeParams ')' '{' corpoFunc '}'  (9)
+	funcType : VOID .  (11)
 
-	IDENT  shift 24
-	.  error
+	.  reduce 11
 
 
 state 18
-	declVar : type $$5 . TArray Lid ';'  (14)
-	TArray : .  (31)
+	funcType : type .  (12)
 
-	'['  shift 25
-	IDENT  reduce 31
-
-	TArray  goto 26
+	.  reduce 12
 
 
 state 19
-	main : VOID . MAIN '(' ')' bloco  (35)
+	defFunc : FUNCTION funcType . IDENT $$2 '(' maybeParams ')' '{' $$3 funcDecList funcCmdList '}'  (10)
 
-	MAIN  shift 27
+	IDENT  shift 26
 	.  error
 
 
 state 20
+	declVar : type $$6 . TArray Lid ';'  (29)
+	TArray : .  (39)
+
+	'['  shift 27
+	IDENT  reduce 39
+
+	TArray  goto 28
+
+
+state 21
+	main : VOID . MAIN '(' ')' bloco  (43)
+
+	MAIN  shift 29
+	.  error
+
+
+state 22
 	prog : $$1 dList main .  (2)
 
 	.  reduce 2
 
 
-state 21
+state 23
 	dList : decl dList .  (3)
 
 	.  reduce 3
 
 
-state 22
-	defStruct : DSTRUCT IDENT '{' . $$3 lcampos $$4 '}' ';'  (12)
-	$$3 : .  (10)
+state 24
+	defStruct : DSTRUCT IDENT '{' . $$4 lcampos $$5 '}' ';'  (27)
+	$$4 : .  (25)
 
-	.  reduce 10
+	.  reduce 25
 
-	$$3  goto 28
+	$$4  goto 30
 
 
-state 23
-	declVar : STRUCT IDENT $$6 . Lid ';'  (16)
+state 25
+	declVar : STRUCT IDENT $$7 . Lid ';'  (31)
 
-	IDENT  shift 29
+	IDENT  shift 31
 	.  error
 
-	Lid  goto 30
-	id  goto 31
+	Lid  goto 32
+	id  goto 33
 
 
-state 24
-	defFunc : FUNCTION type IDENT . $$2 '(' maybeParams ')' '{' corpoFunc '}'  (9)
+state 26
+	defFunc : FUNCTION funcType IDENT . $$2 '(' maybeParams ')' '{' $$3 funcDecList funcCmdList '}'  (10)
 	$$2 : .  (8)
 
 	.  reduce 8
 
-	$$2  goto 32
-
-
-state 25
-	TArray : '[' . NUM ']' $$7 TArray  (30)
-
-	NUM  shift 33
-	.  error
-
-
-state 26
-	declVar : type $$5 TArray . Lid ';'  (14)
-
-	IDENT  shift 29
-	.  error
-
-	Lid  goto 34
-	id  goto 31
+	$$2  goto 34
 
 
 state 27
-	main : VOID MAIN . '(' ')' bloco  (35)
+	TArray : '[' . NUM ']' $$8 TArray  (38)
 
-	'('  shift 35
+	NUM  shift 35
 	.  error
 
 
 state 28
-	defStruct : DSTRUCT IDENT '{' $$3 . lcampos $$4 '}' ';'  (12)
+	declVar : type $$6 TArray . Lid ';'  (29)
 
-	INT  shift 3
-	DOUBLE  shift 4
-	BOOL  shift 5
-	STRUCT  shift 7
+	IDENT  shift 31
 	.  error
 
-	type  goto 9
-	declVar  goto 36
-	lcampos  goto 37
+	Lid  goto 36
+	id  goto 33
 
 
 state 29
-	id : IDENT .  (28)
+	main : VOID MAIN . '(' ')' bloco  (43)
 
-	.  reduce 28
+	'('  shift 37
+	.  error
 
 
 state 30
-	declVar : STRUCT IDENT $$6 Lid . ';'  (16)
-	Lid : Lid . ',' id  (26)
-
-	';'  shift 38
-	','  shift 39
-	.  error
-
-
-state 31
-	Lid : id .  (27)
-
-	.  reduce 27
-
-
-state 32
-	defFunc : FUNCTION type IDENT $$2 . '(' maybeParams ')' '{' corpoFunc '}'  (9)
-
-	'('  shift 40
-	.  error
-
-
-state 33
-	TArray : '[' NUM . ']' $$7 TArray  (30)
-
-	']'  shift 41
-	.  error
-
-
-state 34
-	declVar : type $$5 TArray Lid . ';'  (14)
-	Lid : Lid . ',' id  (26)
-
-	';'  shift 42
-	','  shift 39
-	.  error
-
-
-state 35
-	main : VOID MAIN '(' . ')' bloco  (35)
-
-	')'  shift 43
-	.  error
-
-
-state 36
-	lcampos : declVar .  (19)
-
-	.  reduce 19
-
-
-state 37
-	defStruct : DSTRUCT IDENT '{' $$3 lcampos . $$4 '}' ';'  (12)
-	lcampos : lcampos . declVar  (18)
-	$$4 : .  (11)
+	defStruct : DSTRUCT IDENT '{' $$4 . lcampos $$5 '}' ';'  (27)
 
 	INT  shift 3
 	DOUBLE  shift 4
 	BOOL  shift 5
 	STRUCT  shift 7
-	'}'  reduce 11
+	.  error
 
 	type  goto 9
-	declVar  goto 44
-	$$4  goto 45
+	declVar  goto 38
+	lcampos  goto 39
 
 
-state 38
-	declVar : STRUCT IDENT $$6 Lid ';' .  (16)
-
-	.  reduce 16
-
-
-state 39
-	Lid : Lid ',' . id  (26)
-
-	IDENT  shift 29
-	.  error
-
-	id  goto 46
-
-
-state 40
-	defFunc : FUNCTION type IDENT $$2 '(' . maybeParams ')' '{' corpoFunc '}'  (9)
-	maybeParams : .  (21)
-
-	INT  shift 3
-	DOUBLE  shift 4
-	BOOL  shift 5
-	STRUCT  shift 47
-	')'  reduce 21
-
-	type  goto 48
-	maybeParams  goto 49
-	lParams  goto 50
-	param  goto 51
-
-
-state 41
-	TArray : '[' NUM ']' . $$7 TArray  (30)
-	$$7 : .  (29)
-
-	.  reduce 29
-
-	$$7  goto 52
-
-
-state 42
-	declVar : type $$5 TArray Lid ';' .  (14)
-
-	.  reduce 14
-
-
-state 43
-	main : VOID MAIN '(' ')' . bloco  (35)
-
-	'{'  shift 53
-	.  error
-
-	bloco  goto 54
-
-
-state 44
-	lcampos : lcampos declVar .  (18)
-
-	.  reduce 18
-
-
-state 45
-	defStruct : DSTRUCT IDENT '{' $$3 lcampos $$4 . '}' ';'  (12)
-
-	'}'  shift 55
-	.  error
-
-
-state 46
-	Lid : Lid ',' id .  (26)
-
-	.  reduce 26
-
-
-state 47
-	param : STRUCT . IDENT IDENT  (25)
-
-	IDENT  shift 56
-	.  error
-
-
-state 48
-	param : type . IDENT  (24)
-
-	IDENT  shift 57
-	.  error
-
-
-state 49
-	defFunc : FUNCTION type IDENT $$2 '(' maybeParams . ')' '{' corpoFunc '}'  (9)
-
-	')'  shift 58
-	.  error
-
-
-state 50
-	maybeParams : lParams .  (20)
-	lParams : lParams . ',' param  (22)
-
-	','  shift 59
-	')'  reduce 20
-
-
-state 51
-	lParams : param .  (23)
-
-	.  reduce 23
-
-
-state 52
-	TArray : '[' NUM ']' $$7 . TArray  (30)
-	TArray : .  (31)
-
-	'['  shift 25
-	IDENT  reduce 31
-
-	TArray  goto 60
-
-
-state 53
-	bloco : '{' . listacmd '}'  (36)
-	listacmd : .  (38)
-
-	.  reduce 38
-
-	listacmd  goto 61
-
-
-state 54
-	main : VOID MAIN '(' ')' bloco .  (35)
-
-	.  reduce 35
-
-
-state 55
-	defStruct : DSTRUCT IDENT '{' $$3 lcampos $$4 '}' . ';'  (12)
-
-	';'  shift 62
-	.  error
-
-
-state 56
-	param : STRUCT IDENT . IDENT  (25)
-
-	IDENT  shift 63
-	.  error
-
-
-state 57
-	param : type IDENT .  (24)
-
-	.  reduce 24
-
-
-state 58
-	defFunc : FUNCTION type IDENT $$2 '(' maybeParams ')' . '{' corpoFunc '}'  (9)
-
-	'{'  shift 64
-	.  error
-
-
-state 59
-	lParams : lParams ',' . param  (22)
-
-	INT  shift 3
-	DOUBLE  shift 4
-	BOOL  shift 5
-	STRUCT  shift 47
-	.  error
-
-	type  goto 48
-	param  goto 65
-
-
-state 60
-	TArray : '[' NUM ']' $$7 TArray .  (30)
-
-	.  reduce 30
-
-
-state 61
-	bloco : '{' listacmd . '}'  (36)
-	listacmd : listacmd . cmd  (37)
-
-	IDENT  shift 66
-	NUM  shift 67
-	IF  shift 68
-	'('  shift 69
-	'}'  shift 70
-	.  error
-
-	exp  goto 71
-	cmd  goto 72
-
-
-state 62
-	defStruct : DSTRUCT IDENT '{' $$3 lcampos $$4 '}' ';' .  (12)
-
-	.  reduce 12
-
-
-state 63
-	param : STRUCT IDENT IDENT .  (25)
-
-	.  reduce 25
-
-
-state 64
-	defFunc : FUNCTION type IDENT $$2 '(' maybeParams ')' '{' . corpoFunc '}'  (9)
-	corpoFunc : .  (17)
-
-	.  reduce 17
-
-	corpoFunc  goto 73
-
-
-state 65
-	lParams : lParams ',' param .  (22)
-
-	.  reduce 22
-
-
-state 66
-	exp : IDENT .  (46)
-
-	.  reduce 46
-
-
-state 67
-	exp : NUM .  (44)
-
-	.  reduce 44
-
-
-state 68
-	cmd : IF . '(' exp ')' '{' cmd '}'  (40)
-
-	'('  shift 74
-	.  error
-
-
-state 69
-	exp : '(' . exp ')'  (45)
-
-	IDENT  shift 66
-	NUM  shift 67
-	'('  shift 69
-	.  error
-
-	exp  goto 75
-
-
-state 70
-	bloco : '{' listacmd '}' .  (36)
+state 31
+	id : IDENT .  (36)
 
 	.  reduce 36
 
 
-state 71
-	cmd : exp . ';'  (39)
-	exp : exp . '+' exp  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp . AND exp  (43)
-	exp : exp . '=' exp  (47)
-	exp : exp . '[' exp ']'  (48)
+state 32
+	declVar : STRUCT IDENT $$7 Lid . ';'  (31)
+	Lid : Lid . ',' id  (34)
 
-	AND  shift 76
-	'='  shift 77
-	'>'  shift 78
-	'+'  shift 79
-	'['  shift 80
-	';'  shift 81
+	','  shift 40
+	';'  shift 41
 	.  error
 
 
-state 72
-	listacmd : listacmd cmd .  (37)
+state 33
+	Lid : id .  (35)
+
+	.  reduce 35
+
+
+state 34
+	defFunc : FUNCTION funcType IDENT $$2 . '(' maybeParams ')' '{' $$3 funcDecList funcCmdList '}'  (10)
+
+	'('  shift 42
+	.  error
+
+
+state 35
+	TArray : '[' NUM . ']' $$8 TArray  (38)
+
+	']'  shift 43
+	.  error
+
+
+state 36
+	declVar : type $$6 TArray Lid . ';'  (29)
+	Lid : Lid . ',' id  (34)
+
+	','  shift 40
+	';'  shift 44
+	.  error
+
+
+state 37
+	main : VOID MAIN '(' . ')' bloco  (43)
+
+	')'  shift 45
+	.  error
+
+
+state 38
+	lcampos : declVar .  (33)
+
+	.  reduce 33
+
+
+state 39
+	defStruct : DSTRUCT IDENT '{' $$4 lcampos . $$5 '}' ';'  (27)
+	lcampos : lcampos . declVar  (32)
+	$$5 : .  (26)
+
+	INT  shift 3
+	DOUBLE  shift 4
+	BOOL  shift 5
+	STRUCT  shift 7
+	'}'  reduce 26
+
+	type  goto 9
+	declVar  goto 46
+	$$5  goto 47
+
+
+state 40
+	Lid : Lid ',' . id  (34)
+
+	IDENT  shift 31
+	.  error
+
+	id  goto 48
+
+
+state 41
+	declVar : STRUCT IDENT $$7 Lid ';' .  (31)
+
+	.  reduce 31
+
+
+state 42
+	defFunc : FUNCTION funcType IDENT $$2 '(' . maybeParams ')' '{' $$3 funcDecList funcCmdList '}'  (10)
+	maybeParams : .  (14)
+
+	INT  shift 3
+	DOUBLE  shift 4
+	BOOL  shift 5
+	STRUCT  shift 49
+	')'  reduce 14
+
+	type  goto 50
+	maybeParams  goto 51
+	lParams  goto 52
+	param  goto 53
+
+
+state 43
+	TArray : '[' NUM ']' . $$8 TArray  (38)
+	$$8 : .  (37)
 
 	.  reduce 37
 
+	$$8  goto 54
+
+
+state 44
+	declVar : type $$6 TArray Lid ';' .  (29)
+
+	.  reduce 29
+
+
+state 45
+	main : VOID MAIN '(' ')' . bloco  (43)
+
+	'{'  shift 55
+	.  error
+
+	bloco  goto 56
+
+
+state 46
+	lcampos : lcampos declVar .  (32)
+
+	.  reduce 32
+
+
+state 47
+	defStruct : DSTRUCT IDENT '{' $$4 lcampos $$5 . '}' ';'  (27)
+
+	'}'  shift 57
+	.  error
+
+
+state 48
+	Lid : Lid ',' id .  (34)
+
+	.  reduce 34
+
+
+state 49
+	param : STRUCT . IDENT IDENT  (18)
+
+	IDENT  shift 58
+	.  error
+
+
+state 50
+	param : type . IDENT  (17)
+
+	IDENT  shift 59
+	.  error
+
+
+state 51
+	defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams . ')' '{' $$3 funcDecList funcCmdList '}'  (10)
+
+	')'  shift 60
+	.  error
+
+
+state 52
+	maybeParams : lParams .  (13)
+	lParams : lParams . ',' param  (15)
+
+	','  shift 61
+	')'  reduce 13
+
+
+state 53
+	lParams : param .  (16)
+
+	.  reduce 16
+
+
+state 54
+	TArray : '[' NUM ']' $$8 . TArray  (38)
+	TArray : .  (39)
+
+	'['  shift 27
+	IDENT  reduce 39
+
+	TArray  goto 62
+
+
+state 55
+	bloco : '{' . listacmd '}'  (44)
+	listacmd : .  (46)
+
+	.  reduce 46
+
+	listacmd  goto 63
+
+
+state 56
+	main : VOID MAIN '(' ')' bloco .  (43)
+
+	.  reduce 43
+
+
+state 57
+	defStruct : DSTRUCT IDENT '{' $$4 lcampos $$5 '}' . ';'  (27)
+
+	';'  shift 64
+	.  error
+
+
+state 58
+	param : STRUCT IDENT . IDENT  (18)
+
+	IDENT  shift 65
+	.  error
+
+
+state 59
+	param : type IDENT .  (17)
+
+	.  reduce 17
+
+
+state 60
+	defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams ')' . '{' $$3 funcDecList funcCmdList '}'  (10)
+
+	'{'  shift 66
+	.  error
+
+
+state 61
+	lParams : lParams ',' . param  (15)
+
+	INT  shift 3
+	DOUBLE  shift 4
+	BOOL  shift 5
+	STRUCT  shift 49
+	.  error
+
+	type  goto 50
+	param  goto 67
+
+
+state 62
+	TArray : '[' NUM ']' $$8 TArray .  (38)
+
+	.  reduce 38
+
+
+state 63
+	bloco : '{' listacmd . '}'  (44)
+	listacmd : listacmd . cmd  (45)
+
+	IDENT  shift 68
+	NUM  shift 69
+	IF  shift 70
+	'('  shift 71
+	'}'  shift 72
+	.  error
+
+	exp  goto 73
+	cmd  goto 74
+
+
+state 64
+	defStruct : DSTRUCT IDENT '{' $$4 lcampos $$5 '}' ';' .  (27)
+
+	.  reduce 27
+
+
+state 65
+	param : STRUCT IDENT IDENT .  (18)
+
+	.  reduce 18
+
+
+state 66
+	defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams ')' '{' . $$3 funcDecList funcCmdList '}'  (10)
+	$$3 : .  (9)
+
+	.  reduce 9
+
+	$$3  goto 75
+
+
+state 67
+	lParams : lParams ',' param .  (15)
+
+	.  reduce 15
+
+
+68: shift/reduce conflict (shift 76, reduce 54) on '('
+state 68
+	exp : IDENT .  (54)
+	exp : IDENT . '.' IDENT  (55)
+	exp : IDENT . '(' maybeExp ')'  (56)
+
+	'('  shift 76
+	'.'  shift 77
+	IDENT  reduce 54
+	NUM  reduce 54
+	AND  reduce 54
+	IF  reduce 54
+	RETURN  reduce 54
+	'='  reduce 54
+	'>'  reduce 54
+	'+'  reduce 54
+	'['  reduce 54
+	')'  reduce 54
+	'}'  reduce 54
+	','  reduce 54
+	';'  reduce 54
+	']'  reduce 54
+
+
+state 69
+	exp : NUM .  (52)
+
+	.  reduce 52
+
+
+state 70
+	cmd : IF . '(' exp ')' '{' cmd '}'  (48)
+
+	'('  shift 78
+	.  error
+
+
+state 71
+	exp : '(' . exp ')'  (53)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 79
+
+
+state 72
+	bloco : '{' listacmd '}' .  (44)
+
+	.  reduce 44
+
 
 state 73
-	defFunc : FUNCTION type IDENT $$2 '(' maybeParams ')' '{' corpoFunc . '}'  (9)
+	cmd : exp . ';'  (47)
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
 
-	'}'  shift 82
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	';'  shift 85
 	.  error
 
 
 state 74
-	cmd : IF '(' . exp ')' '{' cmd '}'  (40)
-
-	IDENT  shift 66
-	NUM  shift 67
-	'('  shift 69
-	.  error
-
-	exp  goto 83
-
-
-state 75
-	exp : exp . '+' exp  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp . AND exp  (43)
-	exp : '(' exp . ')'  (45)
-	exp : exp . '=' exp  (47)
-	exp : exp . '[' exp ']'  (48)
-
-	AND  shift 76
-	'='  shift 77
-	'>'  shift 78
-	'+'  shift 79
-	'['  shift 80
-	')'  shift 84
-	.  error
-
-
-state 76
-	exp : exp AND . exp  (43)
-
-	IDENT  shift 66
-	NUM  shift 67
-	'('  shift 69
-	.  error
-
-	exp  goto 85
-
-
-state 77
-	exp : exp '=' . exp  (47)
-
-	IDENT  shift 66
-	NUM  shift 67
-	'('  shift 69
-	.  error
-
-	exp  goto 86
-
-
-state 78
-	exp : exp '>' . exp  (42)
-
-	IDENT  shift 66
-	NUM  shift 67
-	'('  shift 69
-	.  error
-
-	exp  goto 87
-
-
-state 79
-	exp : exp '+' . exp  (41)
-
-	IDENT  shift 66
-	NUM  shift 67
-	'('  shift 69
-	.  error
-
-	exp  goto 88
-
-
-state 80
-	exp : exp '[' . exp ']'  (48)
-
-	IDENT  shift 66
-	NUM  shift 67
-	'('  shift 69
-	.  error
-
-	exp  goto 89
-
-
-state 81
-	cmd : exp ';' .  (39)
-
-	.  reduce 39
-
-
-state 82
-	defFunc : FUNCTION type IDENT $$2 '(' maybeParams ')' '{' corpoFunc '}' .  (9)
-
-	.  reduce 9
-
-
-state 83
-	cmd : IF '(' exp . ')' '{' cmd '}'  (40)
-	exp : exp . '+' exp  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp . AND exp  (43)
-	exp : exp . '=' exp  (47)
-	exp : exp . '[' exp ']'  (48)
-
-	AND  shift 76
-	'='  shift 77
-	'>'  shift 78
-	'+'  shift 79
-	'['  shift 80
-	')'  shift 90
-	.  error
-
-
-state 84
-	exp : '(' exp ')' .  (45)
+	listacmd : listacmd cmd .  (45)
 
 	.  reduce 45
 
 
-state 85
-	exp : exp . '+' exp  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp . AND exp  (43)
-	exp : exp AND exp .  (43)
-	exp : exp . '=' exp  (47)
-	exp : exp . '[' exp ']'  (48)
+state 75
+	defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams ')' '{' $$3 . funcDecList funcCmdList '}'  (10)
+	funcDecList : .  (20)
 
-	'['  shift 80
-	AND  reduce 43
-	'='  reduce 43
-	'>'  reduce 43
-	'+'  reduce 43
-	')'  reduce 43
-	';'  reduce 43
-	']'  reduce 43
+	INT  shift 3
+	DOUBLE  shift 4
+	BOOL  shift 5
+	STRUCT  shift 7
+	IDENT  reduce 20
+	NUM  reduce 20
+	IF  reduce 20
+	RETURN  reduce 20
+	'('  reduce 20
+	'}'  reduce 20
+
+	type  goto 9
+	declVar  goto 86
+	funcDecList  goto 87
+
+
+state 76
+	exp : IDENT '(' . maybeExp ')'  (56)
+	maybeExp : .  (60)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	')'  reduce 60
+
+	exp  goto 88
+	maybeExp  goto 89
+	lExp  goto 90
+
+
+state 77
+	exp : IDENT '.' . IDENT  (55)
+
+	IDENT  shift 91
+	.  error
+
+
+state 78
+	cmd : IF '(' . exp ')' '{' cmd '}'  (48)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 92
+
+
+state 79
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : '(' exp . ')'  (53)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	')'  shift 93
+	.  error
+
+
+state 80
+	exp : exp AND . exp  (51)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 94
+
+
+state 81
+	exp : exp '=' . exp  (57)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 95
+
+
+state 82
+	exp : exp '>' . exp  (50)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 96
+
+
+state 83
+	exp : exp '+' . exp  (49)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 97
+
+
+state 84
+	exp : exp '[' . exp ']'  (58)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 98
+
+
+state 85
+	cmd : exp ';' .  (47)
+
+	.  reduce 47
 
 
 state 86
-	exp : exp . '+' exp  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp . AND exp  (43)
-	exp : exp . '=' exp  (47)
-	exp : exp '=' exp .  (47)
-	exp : exp . '[' exp ']'  (48)
+	funcDecList : declVar . funcDecList  (19)
+	funcDecList : .  (20)
 
-	AND  shift 76
-	'='  shift 77
-	'>'  shift 78
-	'+'  shift 79
-	'['  shift 80
-	')'  reduce 47
-	';'  reduce 47
-	']'  reduce 47
+	INT  shift 3
+	DOUBLE  shift 4
+	BOOL  shift 5
+	STRUCT  shift 7
+	IDENT  reduce 20
+	NUM  reduce 20
+	IF  reduce 20
+	RETURN  reduce 20
+	'('  reduce 20
+	'}'  reduce 20
+
+	type  goto 9
+	declVar  goto 86
+	funcDecList  goto 99
 
 
 state 87
-	exp : exp . '+' exp  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp '>' exp .  (42)
-	exp : exp . AND exp  (43)
-	exp : exp . '=' exp  (47)
-	exp : exp . '[' exp ']'  (48)
+	defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams ')' '{' $$3 funcDecList . funcCmdList '}'  (10)
+	funcCmdList : .  (22)
 
-	AND  shift 76
-	'+'  shift 79
-	'['  shift 80
-	'='  reduce 42
-	')'  reduce 42
-	';'  reduce 42
-	']'  reduce 42
+	.  reduce 22
+
+	funcCmdList  goto 100
 
 
 state 88
-	exp : exp . '+' exp  (41)
-	exp : exp '+' exp .  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp . AND exp  (43)
-	exp : exp . '=' exp  (47)
-	exp : exp . '[' exp ']'  (48)
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+	lExp : exp .  (62)
 
-	AND  shift 76
-	'['  shift 80
-	'='  reduce 41
-	'>'  reduce 41
-	'+'  reduce 41
-	')'  reduce 41
-	';'  reduce 41
-	']'  reduce 41
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	')'  reduce 62
+	','  reduce 62
 
 
 state 89
-	exp : exp . '+' exp  (41)
-	exp : exp . '>' exp  (42)
-	exp : exp . AND exp  (43)
-	exp : exp . '=' exp  (47)
-	exp : exp . '[' exp ']'  (48)
-	exp : exp '[' exp . ']'  (48)
+	exp : IDENT '(' maybeExp . ')'  (56)
 
-	AND  shift 76
-	'='  shift 77
-	'>'  shift 78
-	'+'  shift 79
-	'['  shift 80
-	']'  shift 91
+	')'  shift 101
 	.  error
 
 
 state 90
-	cmd : IF '(' exp ')' . '{' cmd '}'  (40)
+	maybeExp : lExp .  (59)
+	lExp : lExp . ',' exp  (61)
 
-	'{'  shift 92
-	.  error
+	','  shift 102
+	')'  reduce 59
 
 
 state 91
-	exp : exp '[' exp ']' .  (48)
+	exp : IDENT '.' IDENT .  (55)
+
+	.  reduce 55
+
+
+state 92
+	cmd : IF '(' exp . ')' '{' cmd '}'  (48)
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	')'  shift 103
+	.  error
+
+
+state 93
+	exp : '(' exp ')' .  (53)
+
+	.  reduce 53
+
+
+state 94
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp AND exp .  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+
+	'['  shift 84
+	IDENT  reduce 51
+	NUM  reduce 51
+	AND  reduce 51
+	IF  reduce 51
+	RETURN  reduce 51
+	'='  reduce 51
+	'>'  reduce 51
+	'+'  reduce 51
+	'('  reduce 51
+	')'  reduce 51
+	'}'  reduce 51
+	','  reduce 51
+	';'  reduce 51
+	']'  reduce 51
+
+
+state 95
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp '=' exp .  (57)
+	exp : exp . '[' exp ']'  (58)
+
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	IDENT  reduce 57
+	NUM  reduce 57
+	IF  reduce 57
+	RETURN  reduce 57
+	'('  reduce 57
+	')'  reduce 57
+	'}'  reduce 57
+	','  reduce 57
+	';'  reduce 57
+	']'  reduce 57
+
+
+state 96
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp '>' exp .  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+
+	AND  shift 80
+	'+'  shift 83
+	'['  shift 84
+	IDENT  reduce 50
+	NUM  reduce 50
+	IF  reduce 50
+	RETURN  reduce 50
+	'='  reduce 50
+	'('  reduce 50
+	')'  reduce 50
+	'}'  reduce 50
+	','  reduce 50
+	';'  reduce 50
+	']'  reduce 50
+
+
+state 97
+	exp : exp . '+' exp  (49)
+	exp : exp '+' exp .  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+
+	AND  shift 80
+	'['  shift 84
+	IDENT  reduce 49
+	NUM  reduce 49
+	IF  reduce 49
+	RETURN  reduce 49
+	'='  reduce 49
+	'>'  reduce 49
+	'+'  reduce 49
+	'('  reduce 49
+	')'  reduce 49
+	'}'  reduce 49
+	','  reduce 49
+	';'  reduce 49
+	']'  reduce 49
+
+
+state 98
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+	exp : exp '[' exp . ']'  (58)
+
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	']'  shift 104
+	.  error
+
+
+state 99
+	funcDecList : declVar funcDecList .  (19)
+
+	.  reduce 19
+
+
+state 100
+	defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams ')' '{' $$3 funcDecList funcCmdList . '}'  (10)
+	funcCmdList : funcCmdList . funcCmd  (21)
+
+	IDENT  shift 68
+	NUM  shift 69
+	IF  shift 70
+	RETURN  shift 105
+	'('  shift 71
+	'}'  shift 106
+	.  error
+
+	exp  goto 73
+	funcCmd  goto 107
+	cmd  goto 108
+
+
+state 101
+	exp : IDENT '(' maybeExp ')' .  (56)
+
+	.  reduce 56
+
+
+state 102
+	lExp : lExp ',' . exp  (61)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 109
+
+
+state 103
+	cmd : IF '(' exp ')' . '{' cmd '}'  (48)
+
+	'{'  shift 110
+	.  error
+
+
+state 104
+	exp : exp '[' exp ']' .  (58)
+
+	.  reduce 58
+
+
+state 105
+	funcCmd : RETURN . exp  (24)
+
+	IDENT  shift 68
+	NUM  shift 69
+	'('  shift 71
+	.  error
+
+	exp  goto 111
+
+
+state 106
+	defFunc : FUNCTION funcType IDENT $$2 '(' maybeParams ')' '{' $$3 funcDecList funcCmdList '}' .  (10)
+
+	.  reduce 10
+
+
+state 107
+	funcCmdList : funcCmdList funcCmd .  (21)
+
+	.  reduce 21
+
+
+state 108
+	funcCmd : cmd .  (23)
+
+	.  reduce 23
+
+
+state 109
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+	lExp : lExp ',' exp .  (61)
+
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	')'  reduce 61
+	','  reduce 61
+
+
+state 110
+	cmd : IF '(' exp ')' '{' . cmd '}'  (48)
+
+	IDENT  shift 68
+	NUM  shift 69
+	IF  shift 70
+	'('  shift 71
+	.  error
+
+	exp  goto 73
+	cmd  goto 112
+
+
+state 111
+	funcCmd : RETURN exp .  (24)
+	exp : exp . '+' exp  (49)
+	exp : exp . '>' exp  (50)
+	exp : exp . AND exp  (51)
+	exp : exp . '=' exp  (57)
+	exp : exp . '[' exp ']'  (58)
+
+	AND  shift 80
+	'='  shift 81
+	'>'  shift 82
+	'+'  shift 83
+	'['  shift 84
+	IDENT  reduce 24
+	NUM  reduce 24
+	IF  reduce 24
+	RETURN  reduce 24
+	'('  reduce 24
+	'}'  reduce 24
+
+
+state 112
+	cmd : IF '(' exp ')' '{' cmd . '}'  (48)
+
+	'}'  shift 113
+	.  error
+
+
+state 113
+	cmd : IF '(' exp ')' '{' cmd '}' .  (48)
 
 	.  reduce 48
 
 
-state 92
-	cmd : IF '(' exp ')' '{' . cmd '}'  (40)
-
-	IDENT  shift 66
-	NUM  shift 67
-	IF  shift 68
-	'('  shift 69
-	.  error
-
-	exp  goto 71
-	cmd  goto 93
+State 68 contains 1 shift/reduce conflict.
 
 
-state 93
-	cmd : IF '(' exp ')' '{' cmd . '}'  (40)
-
-	'}'  shift 94
-	.  error
-
-
-state 94
-	cmd : IF '(' exp ')' '{' cmd '}' .  (40)
-
-	.  reduce 40
-
-
-27 terminals, 28 nonterminals
-49 grammar rules, 95 states
+29 terminals, 34 nonterminals
+63 grammar rules, 114 states

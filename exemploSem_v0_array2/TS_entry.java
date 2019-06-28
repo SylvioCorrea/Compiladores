@@ -51,6 +51,21 @@ public class TS_entry
     public TabSimb getLocais() {
        return local; 
     }
+    
+    public ArrayList<TS_entry> getParams() {
+        ArrayList<TS_entry> res = new ArrayList<TS_entry>();
+        for(TS_entry e : local.getLista()) {
+            if(e.getClasse()==ClasseID.NomeParam) {
+                res.add(e);
+            } else {
+                //Os parametros foram inseridos por primeiro na tabela de
+                //simbolos da funcao. Se uma entrada nao eh um parametro
+                //nenhuma entrada subsequente sera.
+                break;
+            }
+        }
+        return res;
+    }
 
     public String toString() {
         StringBuilder aux = new StringBuilder("");
@@ -84,9 +99,12 @@ public class TS_entry
         else if (tipo==Parser.Tp_BOOL)   return "boolean"; 
         else if (tipo==Parser.Tp_DOUBLE)  return "double";
         else if (tipo==Parser.Tp_STRUCT) return "struct";
-        else if (tipo.getTipo() != null) return  String.format("array(%d,%s)",
+        else if (tipo==Parser.Tp_VOID) return "void";
+        else if (tipo.getTipo()==Parser.Tp_STRUCT) return tipo.getId();
+        
+        /*else if (tipo.getTipo() != null) return  String.format("array(%d,%s)",
                                                    tipo.nroElementos, 
-                                                    tipo2str(tipo.tipoBase));
+                                                    tipo2str(tipo.tipoBase));*/
                  
         else if (tipo==Parser.Tp_ERRO)  return  "_erro_";
         else                             return "erro/tp";

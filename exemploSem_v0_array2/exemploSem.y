@@ -1,6 +1,7 @@
     
 %{
   import java.io.*;
+  import java.util.ArrayList;
 %}
 
 
@@ -17,7 +18,10 @@
 %type <sval> IDENT
 %type <ival> NUM
 %type <obj> type
+%type <obj> funcType
 %type <obj> exp
+%type <obj> maybeExp
+%type <obj> lExp
 
 %%
 
@@ -44,15 +48,57 @@ defFunc : FUNCTION funcType IDENT
      				ts = escopoFuncao; //tabela de simbolos da funcao
      			}
      	    }
-          '(' funcParams ')' '{' funcDecList funcCmdList '}' {ts = auxTs;} //tabela de simbolos global novamente
+          '(' maybeParams ')' '{' {currClass = ClasseID.VarLocal;}
+          funcDecList funcCmdList '}'
+            {
+                ts = auxTs; //tabela de simbolos global novamente
+                currClass = ClasseID.VarGlobal;
+            }
        ; 
        
 funcType : VOID {$$ = Tp_VOID;}
          | type
          ;
 
-//TODO declaracoes dentro da funcao
-funcDecList : 
+//uma funcao pode ou nao ter parametros
+maybeParams : lParams
+            |
+            ;
+
+lParams : lParams ',' param
+        | param
+        ;
+        
+param : type IDENT
+            {
+                TS_entry temp = ts.pesquisa($2);
+                if(temp!=null) {
+                    yyerror("(sem) nome >" + $2 + "< jah declarado");
+                } else {
+                    temp = new TS_entry($2, (TS_entry)$1, ClasseID.NomeParam);
+                    ts.insert(temp);
+                }
+            }
+      | STRUCT IDENT IDENT
+            {
+                TS_entry temp = ts.pesquisa($3); //procura nome
+                if(temp!=null) {
+                    yyerror("(sem) nome >" + $3 + "< jah declarado");
+                } else {
+                    TS_entry structType = auxTs.pesquisa($2); //procura tipo da struct nas declaracoes globais
+                    if(structType==null || structType.getClasse()!=ClasseID.NomeStruct) {
+                        yyerror("(sem) >"+$2+"< nao eh um tipo de struct.");
+                        structType = Tp_ERRO;
+                    }
+                    temp = new TS_entry($2, structType, ClasseID.NomeParam);
+                    ts.insert(temp);
+                }
+            }
+      ;
+
+
+funcDecList : declVar funcDecList
+            | 
             ;
 
 funcCmdList : funcCmdList funcCmd
@@ -92,8 +138,8 @@ declVar : type {currentType = (TS_entry)$1;}
         //declarando uma variavel de algum tipo de struct
         | STRUCT IDENT
             {
-                currentType = ts.pesquisa($2);
-                if(currentType==null) {
+                currentType = auxTs.pesquisa($2);
+                if(currentType==null || currentType.getClasse()!=ClasseID.NomeStruct) {
                     yyerror("(sem) nao existe struct do tipo >" + $2 + "<.");
                     currentType = Tp_ERRO;
                 }
@@ -105,41 +151,7 @@ lcampos : lcampos declVar
         | declVar
 		;
 
-//uma funcao pode ou nao ter parametros
-maybeParams : lParams
-            |
-            ;
 
-lParams : lParams ',' param
-        | param
-        ;
-        
-param : type IDENT
-            {
-                TS_entry temp = ts.pesquisa($2);
-                if(temp!=null) {
-                    yyerror("(sem) nome >" + $2 + "< jah declarado");
-                } else {
-                    temp = new TS_entry($2, (TS_entry)$1, ClasseID.NomeParam);
-                    ts.insert(temp);
-                }
-            }
-      | STRUCT IDENT IDENT
-            {
-                TS_entry temp = ts.pesquisa($3); //procura nome
-                if(temp!=null) {
-                    yyerror("(sem) nome >" + $2 + "< jah declarado");
-                } else {
-                    TS_entry structType = auxTs.pesquisa($2); //procura tipo da struct nas declaracoes globais
-                    if(structType==null || structType.getClasse()!=ClasseID.NomeStruct) {
-                        yyerror("(sem) >"+$2+"< nao eh um tipo de struct.");
-                        structType = Tp_ERRO;
-                    }
-                    temp = new TS_entry($2, structType, ClasseID.NomeParam);
-                    ts.insert(temp);
-                }
-            }
-      ;
 
 // ===============================================================================================
 
@@ -197,12 +209,61 @@ exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
     | '(' exp ')' { $$ = $2; }
     | IDENT       { TS_entry nodo = ts.pesquisa($1);
                     if (nodo == null) {
-                       yyerror("(sem) var <" + $1 + "> nao declarada"); 
-                       $$ = Tp_ERRO;    
-                       }           
-                    else
-                        $$ = nodo.getTipo();
-                  }                   
+                       nodo = auxTs.pesquisa($1);
+                       if(nodo == null) {
+                           yyerror("(sem) var <" + $1 + "> nao declarada"); 
+                           nodo = Tp_ERRO;   
+                       }
+                    }
+                    $$ = nodo.getTipo();
+                  }
+     
+     | IDENT '.' IDENT
+                    {
+                        TS_entry nodo = ts.pesquisa($1);
+                        if (nodo == null) {
+                           nodo = auxTs.pesquisa($1);
+                        }
+                        if(nodo == null || nodo.getTipo().getTipo()!=Tp_STRUCT) {
+                            yyerror("(sem) var <" + $1 + "> nao declarada");
+                        } else {
+                            nodo = nodo.getTipo().getLocais().pesquisa($3);
+                        }
+                        if(nodo == null) {
+                            nodo = Tp_ERRO;
+                        } else {
+                            nodo = nodo.getTipo();
+                        }
+                        
+                        $$ = nodo;
+                    }
+     
+     | IDENT '(' maybeExp ')'
+                    {
+                        TS_entry temp = auxTs.pesquisa($1);
+                        boolean ok = false;
+                        if(temp!=null && temp.getClasse()==ClasseID.NomeFuncao) {
+                            ArrayList<TS_entry> paramList = temp.getParams();
+                            ArrayList<TS_entry> arguments = (ArrayList<TS_entry>)$3;
+                            if(paramList.size()==arguments.size()) {
+                                ok = true;
+                                for(int i = 0; i<paramList.size(); i++) {
+                                    if(paramList.get(i).getTipo()!=arguments.get(i).getTipo()) {
+                                        //Uma das expressoes tem tipo diferente do aceito pelo parametro
+                                        ok = false;
+                                        break;
+                                    }
+                                }
+                            }
+                        } else {
+                            yyerror("Nao ha funcao com o no");
+                        }
+                        if(ok) {
+                            $$ = temp.getTipo();
+                        } else {
+                            $$ = Tp_ERRO;
+                        }
+                    }
      | exp '=' exp  {  $$ = validaTipo(ATRIB, (TS_entry)$1, (TS_entry)$3);  } 
      | exp '[' exp ']'  {  if ((TS_entry)$3 != Tp_INT) 
                               yyerror("(sem) indexador não é numérico ");
@@ -214,6 +275,24 @@ exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
                          } 
     ;
 
+maybeExp : lExp {$$ = $1;}
+         | {$$ = new ArrayList<TS_entry>();}
+         ;
+
+lExp : lExp ',' exp
+            {
+                ArrayList<TS_entry> temp = (ArrayList<TS_entry>)$1;
+                temp.add((TS_entry)$3);
+                $$ = temp;
+            }
+     | exp
+            {
+                ArrayList<TS_entry> temp = new ArrayList<TS_entry>();
+                temp.add((TS_entry)$1);
+                $$ = temp;
+            }
+     ;
+     
 %%
 
   private Yylex lexer;
@@ -266,6 +345,7 @@ exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
     lexer = new Yylex(r, this);
 
     ts = new TabSimb();
+    auxTs = ts;
 
     //
     // não me parece que necessitem estar na TS
