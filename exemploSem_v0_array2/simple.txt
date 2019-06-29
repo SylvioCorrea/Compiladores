@@ -1,37 +1,41 @@
 int i;
 int j,k;
 
+double d;
+
 dstruct str1 {
     int a;
     int b,c;
     int i,j,k;
 };
 
+dstruct str2 {
+    int d;
+    struct str1 s3;
+};
+
 struct str1 s;
+struct str2 s2;
 
 bool v;
 
 function int fun1 () {
     int f,g;
     struct str1 s;
-    
+    return 1+2;
 }
 
-function int fun2 (int param1, int param2) {
-
+function str1 fun2() {
+    return s;
 }
-
-function void fun3 (int param1) {
-    
-}
-
 
 
 void main() {
     i = 2;
     j = i;
-    s.a = 2;
-    k = fun1(1);
+    d = 0.1;
+    s.a = 1;
+    s2.d.s3 = s;
 }
 
 

@@ -5,7 +5,7 @@
 %}
 
 
-%token IDENT, INT, DOUBLE, BOOL, NUM, STRING
+%token IDENT, INT, DOUBLE, BOOL, NUM, STRING, NUMDOUBLE
 %token LITERAL, AND, VOID, MAIN, IF
 %token DSTRUCT, STRUCT, FUNCTION, RETURN
 
@@ -17,11 +17,13 @@
 
 %type <sval> IDENT
 %type <ival> NUM
+%type <dval> NUMDOUBLE
 %type <obj> type
 %type <obj> funcType
 %type <obj> exp
 %type <obj> maybeExp
 %type <obj> lExp
+%type <obj> restoStruct
 
 %%
 
@@ -48,7 +50,7 @@ defFunc : FUNCTION funcType IDENT
      				ts = escopoFuncao; //tabela de simbolos da funcao
      			}
      	    }
-          '(' maybeParams ')' '{' {currClass = ClasseID.VarLocal;}
+          '(' maybeParams ')' '{' {currClass = ClasseID.VarLocal; returnType = (TS_entry)$2;}
           funcDecList funcCmdList '}'
             {
                 ts = auxTs; //tabela de simbolos global novamente
@@ -58,6 +60,15 @@ defFunc : FUNCTION funcType IDENT
        
 funcType : VOID {$$ = Tp_VOID;}
          | type
+         | IDENT
+            {
+                TS_entry temp = ts.pesquisa($1);
+                if(temp==null) {
+                    yyerror("(sem) nao existe tipo >"+$1+"<");
+                } else {
+                    $$ = temp;
+                }
+            }
          ;
 
 //uma funcao pode ou nao ter parametros
@@ -107,7 +118,12 @@ funcCmdList : funcCmdList funcCmd
 
 //TODO teste de tipo de retorno
 funcCmd : cmd
-        | RETURN exp
+        | RETURN exp ';'
+            {
+                if(returnType != (TS_entry)$2) {
+                    yyerror("(sem) tipo de retorno incompativel com o tipo declarado da funcao");
+                }
+            }
         ;
 
 defStruct : DSTRUCT IDENT '{'
@@ -205,7 +221,8 @@ cmd :  exp ';'
 exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
     | exp '>' exp { $$ = validaTipo('>', (TS_entry)$1, (TS_entry)$3); }
     | exp AND exp { $$ = validaTipo(AND, (TS_entry)$1, (TS_entry)$3); } 
-    | NUM         { $$ = Tp_INT; }      
+    | NUM         { $$ = Tp_INT; }
+    | NUMDOUBLE   {$$ = Tp_DOUBLE;} 
     | '(' exp ')' { $$ = $2; }
     | IDENT       { TS_entry nodo = ts.pesquisa($1);
                     if (nodo == null) {
@@ -218,25 +235,42 @@ exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
                     $$ = nodo.getTipo();
                   }
      
-     | IDENT '.' IDENT
-                    {
-                        TS_entry nodo = ts.pesquisa($1);
-                        if (nodo == null) {
-                           nodo = auxTs.pesquisa($1);
-                        }
-                        if(nodo == null || nodo.getTipo().getTipo()!=Tp_STRUCT) {
-                            yyerror("(sem) var <" + $1 + "> nao declarada");
-                        } else {
-                            nodo = nodo.getTipo().getLocais().pesquisa($3);
-                        }
-                        if(nodo == null) {
-                            nodo = Tp_ERRO;
-                        } else {
-                            nodo = nodo.getTipo();
-                        }
-                        
-                        $$ = nodo;
+     | IDENT '.'
+            {
+                TS_entry temp = ts.pesquisa($1);
+                if(temp==null || temp.getTipo().getClasse()!=ClasseID.NomeStruct) {
+                    yyerror("(sem) nao existe campo de nome >"+$1+"<");
+                    $$ = Tp_ERRO;
+                } else {
+                    nestedStructTs = ts;
+                    ts = temp.getTipo().getLocais();
+                }
+            }
+       restoStruct 
+                {
+                    ts = nestedStructTs;
+                    $$ = (TS_entry)$3;
+                    
+                    
+                    /*
+                    TS_entry nodo = ts.pesquisa($1);
+                    if (nodo == null) {
+                       nodo = auxTs.pesquisa($1);
                     }
+                    if(nodo == null || nodo.getTipo().getTipo()!=Tp_STRUCT) {
+                        yyerror("(sem) var <" + $1 + "> nao declarada");
+                    } else {
+                        nodo = nodo.getTipo().getLocais().pesquisa($3);
+                    }
+                    if(nodo == null) {
+                        nodo = Tp_ERRO;
+                    } else {
+                        nodo = nodo.getTipo();
+                    }
+                    
+                    $$ = nodo;
+                    */
+                }
      
      | IDENT '(' maybeExp ')'
                     {
@@ -245,18 +279,23 @@ exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
                         if(temp!=null && temp.getClasse()==ClasseID.NomeFuncao) {
                             ArrayList<TS_entry> paramList = temp.getParams();
                             ArrayList<TS_entry> arguments = (ArrayList<TS_entry>)$3;
-                            if(paramList.size()==arguments.size()) {
+                            int parSize = paramList.size();
+                            int argSize = arguments.size();
+                            if(parSize==argSize) {
                                 ok = true;
-                                for(int i = 0; i<paramList.size(); i++) {
-                                    if(paramList.get(i).getTipo()!=arguments.get(i).getTipo()) {
+                                for(int i = 0; i<parSize; i++) {
+                                    if(paramList.get(i).getTipo()!=arguments.get(i)) {
                                         //Uma das expressoes tem tipo diferente do aceito pelo parametro
+                                        yyerror("(sem) tipo de expressao incompativel com tipo de parametro");
                                         ok = false;
                                         break;
                                     }
                                 }
+                            } else {
+                                yyerror("(sem) a funcao requer "+parSize+" parametros, mas esta recebendo "+argSize);
                             }
                         } else {
-                            yyerror("Nao ha funcao com o no");
+                            yyerror("(sem) nao ha funcao com o nome >"+$1+"<");
                         }
                         if(ok) {
                             $$ = temp.getTipo();
@@ -274,6 +313,31 @@ exp : exp '+' exp { $$ = validaTipo('+', (TS_entry)$1, (TS_entry)$3); }
                                   $$ = ((TS_entry)$1).getTipoBase();
                          } 
     ;
+
+restoStruct : IDENT '.'
+                {
+                    TS_entry temp = ts.pesquisa($1);
+                    if(temp==null || temp.getTipo().getClasse()!=ClasseID.NomeStruct) {
+                        yyerror("(sem) nao existe campo de nome >"+$1+"< ou este campo nao eh um struct");
+                        $$ = Tp_ERRO;
+                    } else {
+                        ts = temp.getTipo().getLocais();
+                    }
+                }
+              restoStruct {$$ = (TS_entry)$3;}
+              
+            | IDENT
+                {
+                    TS_entry temp = ts.pesquisa($1);
+                    if(temp==null) {
+                        yyerror("(sem) nao existe campo de nome >"+$1+"<");
+                        $$ = Tp_ERRO;
+                    } else {
+                        $$ = temp.getTipo();
+                    }
+                    
+                }
+            ;
 
 maybeExp : lExp {$$ = $1;}
          | {$$ = new ArrayList<TS_entry>();}
@@ -299,6 +363,9 @@ lExp : lExp ',' exp
 
   private TabSimb ts;
   private TabSimb auxTs;
+  private TabSimb nestedStructTs; //quando consultando nested structs, guarda o escopo que estava sendo utilizado
+  
+  private TS_entry returnType;
   
   private TS_entry nodoAux;
 
@@ -337,7 +404,7 @@ lExp : lExp ',' exp
 
   public void yyerror (String error) {
     //System.err.println("Erro (linha: "+ lexer.getLine() + ")\tMensagem: "+error);
-    System.err.printf("Erro (linha: %2d) \tMensagem: %s\n", lexer.getLine(), error);
+    System.err.printf("Erro (linha: %2d) Mensagem: %s\n", lexer.getLine(), error);
   }
 
 

@@ -19,10 +19,11 @@
 %}
 
 NUM = [0-9]+
+NUMDOUBLE = [0-9]+[.][0-9]+
 NL  = \n|\r|\r\n
 
 %%
-
+//10.2  10 '.' 2
 
 "$TRACE_ON"  { yyparser.setDebug(true);  }
 "$TRACE_OFF" { yyparser.setDebug(false); }
@@ -45,8 +46,12 @@ NL  = \n|\r|\r\n
 
 "&&" { return Parser.AND; }
 
-{NUM}  { yyparser.yylval = new ParserVal(Integer.parseInt(yytext())); 
+{NUM}  { yyparser.yylval = new ParserVal(Integer.parseInt(yytext()));
+         //System.out.println(yytext()); 
          return Parser.NUM; }
+{NUMDOUBLE}  { yyparser.yylval = new ParserVal(Double.parseDouble(yytext()));
+         //System.out.println(yytext());
+         return Parser.NUMDOUBLE; }
 
 int    { return Parser.INT;     }
 double  { return Parser.DOUBLE;   }
